@@ -1,0 +1,38 @@
+// control-plane/prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Possible states for our target servers
+enum AgentStatus {
+  IDLE
+  ATTACKING
+  OFFLINE
+}
+
+// Information about the server we want to attack
+model Agent {
+  id        String      @id @default(uuid())
+  hostname  String      @unique
+  ipAddress String
+  status    AgentStatus @default(IDLE)
+  lastSeen  DateTime    @updatedAt
+  attacks   AttackLog[]
+}
+
+// A history of every chaos experiment we've ever run
+model AttackLog {
+  id           String   @id @default(uuid())
+  agentId      String
+  agent        Agent    @relation(fields: [agentId], references: [id])
+  faultType    String   // e.g., "CPU_SPIKE"
+  parameters   Json     // stores details like { "level": 90 }
+  startedAt    DateTime @default(now())
+  completedAt  DateTime?
+  isSuccessful Boolean  @default(false)
+}
