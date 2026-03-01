@@ -15,7 +15,7 @@ export interface HeartbeatPayload {
 // what the control panel sends back to the Agent
 export interface AgentCommand {
     commandId: string | null;
-    type: "IDLE" | "CPU_STRESS" | "Network LATENCY";
+    type: "IDLE" | "CPU_STRESS" | "NETWORK_LATENCY";
     payload: CpuStressPayload | NetworkLatencyPayload | null;
 }
 
@@ -35,6 +35,7 @@ export interface NetworkLatencyPayload {
 export interface AttackReport {
     commandId : string;
     agentId: string;
-    status: "IN_PROGRESS" | "COMPLETED" | "FAILED";
+    status: "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
+    message?: string;
     completedAt?: string;
 }

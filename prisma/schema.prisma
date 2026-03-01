@@ -48,6 +48,7 @@ enum AttackStatus {
   IN_PROGRESS
   COMPLETED
   FAILED
+  CANCELLED
 }
 
 enum AttackType {

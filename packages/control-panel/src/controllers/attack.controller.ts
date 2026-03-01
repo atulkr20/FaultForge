@@ -139,3 +139,47 @@ export const getAttack = async (req: Request, res: Response) => {
         return res.status(500).json({ error: "Internal server error"});
     }
 };
+
+export const cancelAttack = async (req: Request, res: Response) => {
+    const rawId = req.params.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
+
+    if (!id) {
+        return res.status(400).json({ error: "Attack id is required" });
+    }
+
+    try {
+        const attack = await prisma.attack.findUnique({ where: { id } });
+        if (!attack) {
+            return res.status(404).json({ error: "Attack not found" });
+        }
+
+        // Can only cancel pending or in-progress attacks
+        if (attack.status !== "PENDING" && attack.status !== "IN_PROGRESS") {
+            return res.status(400).json({ 
+                error: `Cannot cancel attack with status ${attack.status}` 
+            });
+        }
+
+        // Update attack to cancelled
+        const updated = await prisma.attack.update({
+            where: { id },
+            data: {
+                status: "CANCELLED",
+                completedAt: new Date(),
+            },
+        });
+
+        // Free up the agent
+        await prisma.agent.update({
+            where: { id: attack.agentId },
+            data: { status: "IDLE" },
+        });
+
+        console.log(`Attack [${id}] cancelled`);
+        return res.json(updated);
+    } catch (err) {
+        console.error("Cancel attack error:", err);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};

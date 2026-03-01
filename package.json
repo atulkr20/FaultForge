@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev:panel": "pnpm --filter control-panel dev",
-    "dev:agent": "pnpm --filter agent dev"
+    "dev:panel": "pnpm --filter @faultforge/control-panel dev",
+    "dev:agent": "pnpm --filter @faultforge/agent dev",
+    "dev:dashboard": "pnpm --filter @faultforge/dashboard dev"
   },
   "devDependencies": {
     "dotenv": "^17.3.1",

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { AgentCommand, HeartbeatPayload } from "@faultforge/shared";
 import { agentMeta } from "./index";
-import { executeCommand } from "./executor";
+import { executeCommand, cancelCurrentAttack } from './executor';
 
 
 const CONTROL_PANEL = process.env.CONTROL_PANEL_URL || "http://localhost:3000";
@@ -38,6 +38,22 @@ const poll = async (meta: typeof agentMeta) => {
 
         const command = data.command;
 
+        // If busy, check if current attack was cancelled
+        if (isBusy && currentCommandId) {
+            try {
+                const { data: attackData } = await axios.get(
+                    `${CONTROL_PANEL}/api/attacks/${currentCommandId}`,
+                    { timeout: 5000 }
+                );
+                if (attackData.status === "CANCELLED") {
+                    console.log(`Attack [${currentCommandId}] was cancelled - stopping execution`);
+                    cancelCurrentAttack();
+                }
+            } catch (err: any) {
+                console.warn(`Failed to check attack status: ${err.message}`);
+            }
+        }
+
         if (command.type === "IDLE" || isBusy || !command.commandId) {
             return;
         }
@@ -58,7 +74,7 @@ const poll = async (meta: typeof agentMeta) => {
         // Don't crash the agent if the control panel is temporarily down
         // Just log and  try again next interval
 
-        if(err.code === "ENCONNREFUSED"){
+        if(err.code === "ECONNREFUSED"){
             console.warn(" Control panel is unreachable - will retry...");
         } else {
             console.warn(`Poll error: ${err.message}`);

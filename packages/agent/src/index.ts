@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import os from 'os';
 import { getOrCreateAgentId } from './identity';
-import { startPolling } from '../src/poller';
+import { startPolling } from './poller';
 
 dotenv.config();
 
