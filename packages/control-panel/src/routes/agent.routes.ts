@@ -1,6 +1,6 @@
 import { Router } from "express";
 import {
-    handleHeart,
+    handleHeartbeat,
     listAgents,
     getAgent,
 } from "../controllers/agent.controller";

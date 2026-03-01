@@ -15,8 +15,8 @@ app.use(cors());
 app.use(express.json());
 
 //Routes
-app.use("./api/agents", agentRoutes);
-app.use("/api/atacks", attackRoutes);
+app.use("/api/agents", agentRoutes);
+app.use("/api/attacks", attackRoutes);
 
 // Health check to monintor the server is alive
 app.get("/health", (_, res) => {
@@ -30,6 +30,6 @@ app.get("/health", (_, res) => {
 // Start Server
 
 app.listen(PORT, () => {
-    console.log(`Faultforge control panel is runign on http://localhost:${PORT}`);
-    console.log(`Health check: http://localhost:${PORT}`);
+    console.log(`Faultforge control panel is running on http://localhost:${PORT}`);
+    console.log(`Health check: http://localhost:${PORT}/health`);
 });
