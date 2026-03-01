@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+// Represents a registered Chaos Agent
+model Agent {
+  id           String      @id @default(uuid())
+  hostname     String
+  ipAddress    String
+  platform     String
+  arch         String
+  version      String
+  status       AgentStatus @default(IDLE)
+  lastSeenAt   DateTime    @default(now())
+  registeredAt DateTime    @default(now())
+
+  attacks Attack[] // one agent can have many attacks
+}
+
+// Represents a scheduled or completed fault injection
+model Attack {
+  id           String       @id @default(uuid())
+  agentId      String
+  agent        Agent        @relation(fields: [agentId], references: [id])
+  type         AttackType
+  payload      Json // flexible, stores CPU or Network params
+  status       AttackStatus @default(PENDING)
+  scheduledAt  DateTime     @default(now())
+  startedAt    DateTime?
+  completedAt  DateTime?
+  errorMessage String?
+}
+
+enum AgentStatus {
+  IDLE
+  BUSY
+  OFFLINE
+}
+
+enum AttackStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}
+
+enum AttackType {
+  CPU_STRESS
+  NETWORK_LATENCY
+}

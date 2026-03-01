@@ -5,5 +5,12 @@
   "scripts": {
     "dev:panel": "pnpm --filter control-panel dev",
     "dev:agent": "pnpm --filter agent dev"
+  },
+  "devDependencies": {
+    "dotenv": "^17.3.1",
+    "prisma": "^7.4.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.4.2"
   }
 }
