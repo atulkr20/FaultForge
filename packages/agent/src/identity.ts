@@ -16,5 +16,8 @@ export const getOrCreateAgentId = (): string => {
     } 
 
     // If first time - generate a fresh uuid and save it
-    
-}
+    const newId = uuidv4();
+    fs.writeFileSync(ID_FILE, newId, "utf-8");
+    console.log(`Generated new agent ID: ${newId}`);
+    return newId;
+};
