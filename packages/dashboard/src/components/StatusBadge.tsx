@@ -8,20 +8,20 @@ interface Props {
 }
 
 const toneMap: Record<Status, { dot: string; text: string; pulse?: boolean }> = {
-  IDLE: { dot: "bg-success", text: "text-success" },
-  BUSY: { dot: "bg-danger", text: "text-danger", pulse: true },
-  OFFLINE: { dot: "bg-slate-500", text: "text-slate-400" },
-  PENDING: { dot: "bg-warning", text: "text-warning" },
-  IN_PROGRESS: { dot: "bg-danger", text: "text-danger", pulse: true },
-  COMPLETED: { dot: "bg-success", text: "text-success" },
-  FAILED: { dot: "bg-danger", text: "text-danger" },
-  CANCELLED: { dot: "bg-slate-500", text: "text-slate-400" },
+  IDLE: { dot: "bg-success", text: "text-text-primary" },
+  BUSY: { dot: "bg-warning", text: "text-text-primary", pulse: true },
+  OFFLINE: { dot: "bg-slate-500", text: "text-text-muted" },
+  PENDING: { dot: "bg-warning", text: "text-text-primary" },
+  IN_PROGRESS: { dot: "bg-warning", text: "text-text-primary", pulse: true },
+  COMPLETED: { dot: "bg-success", text: "text-text-primary" },
+  FAILED: { dot: "bg-danger", text: "text-text-primary" },
+  CANCELLED: { dot: "bg-slate-500", text: "text-text-muted" },
 };
 
 export default function StatusBadge({ status }: Props) {
   const tone = toneMap[status];
   return (
-    <div className={cn("inline-flex items-center gap-2 rounded-full bg-border/60 px-2.5 py-1 text-xs font-medium", tone.text)}>
+    <div className={cn("inline-flex items-center gap-2 rounded-md border border-border bg-bg/70 px-2.5 py-1 text-[11px] font-semibold tracking-[0.06em]", tone.text)}>
       <span className={cn("h-2 w-2 rounded-full", tone.dot, tone.pulse && "animate-pulseSlow")} />
       {status}
     </div>

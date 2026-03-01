@@ -5,7 +5,7 @@ export default function AttackTypeIconLabel({ type }: { type: AttackType }) {
   if (type === "CPU_STRESS") {
     return (
       <div className="inline-flex items-center gap-2">
-        <Cpu className="h-4 w-4 text-danger" />
+        <Cpu className="h-4 w-4 text-warning" />
         <span>CPU_STRESS</span>
       </div>
     );
@@ -13,7 +13,7 @@ export default function AttackTypeIconLabel({ type }: { type: AttackType }) {
 
   return (
     <div className="inline-flex items-center gap-2">
-      <Wifi className="h-4 w-4 text-warning" />
+      <Wifi className="h-4 w-4 text-text-muted" />
       <span>NETWORK_LATENCY</span>
     </div>
   );

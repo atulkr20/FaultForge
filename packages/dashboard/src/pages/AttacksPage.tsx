@@ -1,9 +1,9 @@
-import { Fragment, useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Fragment, useMemo, useState, type MouseEvent } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAgents, getAttacks, cancelAttack } from "@/lib/api";
 import type { AttackStatus, AttackType } from "@/lib/types";
 import { calculateDuration, formatDate } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import {
   Table,
@@ -43,9 +43,9 @@ export default function AttacksPage() {
     },
   });
 
-  const handleCancel = (attackId: string, e: React.MouseEvent) => {
+  const handleCancel = (attackId: string, e: MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to cancel this attack?")) {
+    if (confirm("Cancel this operation?")) {
       cancelMutation.mutate(attackId);
     }
   };
@@ -55,79 +55,102 @@ export default function AttacksPage() {
     return [...data].sort((a, b) => +new Date(b.scheduledAt) - +new Date(a.scheduledAt));
   }, [attacks, attackType]);
 
+  const activeCount = rows.filter((r) => r.status === "PENDING" || r.status === "IN_PROGRESS").length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <Card>
         <CardHeader>
-          <CardTitle>Attacks</CardTitle>
+          <CardDescription>Operation Stream</CardDescription>
+          <CardTitle className="text-2xl">Attack Logbook</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="grid gap-3 md:grid-cols-3">
-            <Select value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="">All Status</option>
-              {(["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"] as AttackStatus[]).map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </Select>
+            <div>
+              <p className="mb-2 text-[11px] uppercase tracking-[0.08em] text-text-muted">Status Filter</p>
+              <Select value={status} onChange={(e) => setStatus(e.target.value)}>
+                <option value="">All Status</option>
+                {(["PENDING", "IN_PROGRESS", "COMPLETED", "FAILED", "CANCELLED"] as AttackStatus[]).map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <p className="mb-2 text-[11px] uppercase tracking-[0.08em] text-text-muted">Agent Filter</p>
+              <Select value={agentId} onChange={(e) => setAgentId(e.target.value)}>
+                <option value="">All Agents</option>
+                {agents.map((a) => (
+                  <option key={a.id} value={a.id}>{a.hostname}</option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <p className="mb-2 text-[11px] uppercase tracking-[0.08em] text-text-muted">Type Filter</p>
+              <Select value={attackType} onChange={(e) => setAttackType(e.target.value)}>
+                <option value="">All Attack Types</option>
+                {(["CPU_STRESS", "NETWORK_LATENCY"] as AttackType[]).map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </Select>
+            </div>
+          </div>
 
-            <Select value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-              <option value="">All Agents</option>
-              {agents.map((a) => (
-                <option key={a.id} value={a.id}>{a.hostname}</option>
-              ))}
-            </Select>
-
-            <Select value={attackType} onChange={(e) => setAttackType(e.target.value)}>
-              <option value="">All Attack Types</option>
-              {(["CPU_STRESS", "NETWORK_LATENCY"] as AttackType[]).map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </Select>
+          <div className="flex items-center gap-2 rounded-md border border-border bg-bg/60 px-3 py-2 text-xs text-text-muted">
+            <span className="uppercase tracking-[0.08em]">Visible Records:</span>
+            <span className="font-semibold text-text-primary">{rows.length}</span>
+            <span className="uppercase tracking-[0.08em]">Active:</span>
+            <span className="font-semibold text-warning">{activeCount}</span>
           </div>
         </CardContent>
       </Card>
 
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="pt-4">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Attack Type</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Agent</TableHead>
+                <TableHead>Target</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead>Timestamp</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>Control</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {rows.map((attack) => (
                 <Fragment key={attack.id}>
-                  <TableRow key={attack.id} className="cursor-pointer" onClick={() => setExpanded((curr) => curr === attack.id ? null : attack.id)}>
+                  <TableRow className="cursor-pointer" onClick={() => setExpanded((curr) => curr === attack.id ? null : attack.id)}>
                     <TableCell><AttackTypeIconLabel type={attack.type} /></TableCell>
                     <TableCell>{attack.agent?.hostname ?? attack.agentId.slice(0, 8)}</TableCell>
+                    <TableCell className="text-text-muted">{attack.target?.name ?? "-"}</TableCell>
                     <TableCell><StatusBadge status={attack.status} /></TableCell>
                     <TableCell>{calculateDuration(attack.startedAt, attack.completedAt)}</TableCell>
                     <TableCell className="text-text-muted">{formatDate(attack.scheduledAt)}</TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       {(attack.status === "PENDING" || attack.status === "IN_PROGRESS") && (
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           variant="danger"
                           onClick={(e) => handleCancel(attack.id, e)}
                           disabled={cancelMutation.isPending}
                         >
-                          Cancel
+                          Abort
                         </Button>
                       )}
                     </TableCell>
                   </TableRow>
+
                   {expanded === attack.id && (
-                    <TableRow key={`${attack.id}-expanded`}>
-                      <TableCell colSpan={6}>
-                        <pre className="overflow-auto rounded-md border border-border bg-bg p-3 font-mono text-xs text-text-muted">
-                          {JSON.stringify(attack.payload, null, 2)}
-                        </pre>
+                    <TableRow>
+                      <TableCell colSpan={7}>
+                        <div className="space-y-2 rounded-md border border-border bg-bg/70 p-3">
+                          <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Payload Snapshot</p>
+                          <pre className="overflow-auto font-mono text-xs text-text-muted">
+                            {JSON.stringify(attack.payload, null, 2)}
+                          </pre>
+                        </div>
                       </TableCell>
                     </TableRow>
                   )}

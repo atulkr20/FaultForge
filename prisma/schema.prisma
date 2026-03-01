@@ -28,6 +28,8 @@ model Attack {
   id           String       @id @default(uuid())
   agentId      String
   agent        Agent        @relation(fields: [agentId], references: [id])
+  targetId     String?
+  target       Target?      @relation(fields: [targetId], references: [id])
   type         AttackType
   payload      Json // flexible, stores CPU or Network params
   status       AttackStatus @default(PENDING)
@@ -35,6 +37,17 @@ model Attack {
   startedAt    DateTime?
   completedAt  DateTime?
   errorMessage String?
+}
+
+model Target {
+  id          String   @id @default(uuid())
+  name        String
+  baseUrl     String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attacks Attack[]
 }
 
 enum AgentStatus {

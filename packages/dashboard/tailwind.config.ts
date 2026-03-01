@@ -6,16 +6,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: "#0a0a0f",
-        card: "#111118",
-        border: "#1e1e2e",
-        primary: "#7c3aed",
-        danger: "#ef4444",
-        success: "#22c55e",
-        warning: "#f59e0b",
+        bg: "#0b0d10",
+        card: "#111418",
+        border: "#252a31",
+        primary: "#b8c2cc",
+        danger: "#dc5f5f",
+        success: "#6fbe89",
+        warning: "#d3a957",
         text: {
-          primary: "#f1f5f9",
-          muted: "#64748b",
+          primary: "#e5e7eb",
+          muted: "#8b94a0",
         },
       },
       fontFamily: {
@@ -23,7 +23,7 @@ export default {
         mono: ["'JetBrains Mono'", "monospace"],
       },
       boxShadow: {
-        glow: "0 0 0 1px rgba(124, 58, 237, 0.35), 0 0 28px rgba(124, 58, 237, 0.16)",
+        glow: "0 0 0 1px rgba(211, 169, 87, 0.22), 0 12px 30px rgba(0, 0, 0, 0.35)",
       },
       animation: {
         pulseSlow: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",

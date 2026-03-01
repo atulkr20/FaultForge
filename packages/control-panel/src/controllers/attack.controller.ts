@@ -5,7 +5,7 @@ import { AttackReport } from "@faultforge/shared";
 // Api/attacks
 
 export const scheduleAttack = async (req: Request, res: Response) => {
-    const { agentId, type, payload } = req.body;
+    const { agentId, targetId, type, payload } = req.body;
 
     // validate required fields
     if(!agentId || !type || !payload) {
@@ -19,6 +19,13 @@ export const scheduleAttack = async (req: Request, res: Response) => {
     if(!agent) {
         return res.status(404).json({ error: "Agent not found"});
     }
+
+    if (targetId) {
+        const target = await prisma.target.findUnique({ where: { id: targetId } });
+        if (!target) {
+            return res.status(404).json({ error: "Target not found" });
+        }
+    }
     // One attack at a time
     if(agent.status === "BUSY") {
         return res.status(409).json({
@@ -29,6 +36,7 @@ export const scheduleAttack = async (req: Request, res: Response) => {
         const attack = await prisma.attack.create({
             data: {
                 agentId, 
+                targetId: targetId || null,
                 type,
                 payload,
                 status: "PENDING",
@@ -65,7 +73,7 @@ export const reportAttack = async (req: Request, res: Response) => {
             return res.status(404).json({ error: "Attack not found" });
         }
 
-        const isFinished = body.status === "COMPLETED" || body.status === "FAILED";
+        const isFinished = body.status === "COMPLETED" || body.status === "FAILED" || body.status === "CANCELLED";
 
         // Update the record with the agent's report
         const updated = await prisma.attack.update({
@@ -108,6 +116,7 @@ export const listAttacks = async (req: Request, res: Response) => {
                 agent: {
                     select: { hostname: true, ipAddress: true },
                 },
+                target: true,
             },
         });
         return res.json(attacks);
@@ -128,7 +137,7 @@ export const getAttack = async (req: Request, res: Response) => {
     try {
         const attack = await prisma.attack.findUnique({
             where: { id },
-            include: { agent: true },
+            include: { agent: true, target: true },
         });
         if(!attack) {
             return res.status(404).json({ error: "Attack not found"});

@@ -5,6 +5,7 @@ export type AttackType = "CPU_STRESS" | "NETWORK_LATENCY";
 export interface Attack {
   id: string;
   agentId: string;
+  targetId?: string | null;
   type: AttackType;
   payload: Record<string, unknown>;
   status: AttackStatus;
@@ -13,6 +14,16 @@ export interface Attack {
   completedAt: string | null;
   errorMessage: string | null;
   agent?: Agent;
+  target?: Target;
+}
+
+export interface Target {
+  id: string;
+  name: string;
+  baseUrl: string;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Agent {
@@ -31,6 +42,13 @@ export interface Agent {
 
 export interface CreateAttackRequest {
   agentId: string;
+  targetId?: string;
   type: AttackType;
   payload: Record<string, unknown>;
+}
+
+export interface CreateTargetRequest {
+  name: string;
+  baseUrl: string;
+  description?: string;
 }

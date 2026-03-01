@@ -1,11 +1,11 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ArrowUpRight, Bomb, Server, Shield, ShieldCheck, Zap } from "lucide-react";
+import { Activity, Bomb, Cpu, Server, ShieldCheck, Timer } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip } from "recharts";
 import { getAgents, getAttacks } from "@/lib/api";
 import { calculateDuration, formatDate } from "@/lib/utils";
-import type { Agent, Attack } from "@/lib/types";
+import type { Attack } from "@/lib/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,65 +13,9 @@ import StatusBadge from "@/components/StatusBadge";
 import AttackTypeIconLabel from "@/components/AttackTypeIconLabel";
 import { useRelativeTime } from "@/hooks/useRelativeTime";
 
-function StatCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  pulse,
-}: {
-  title: string;
-  value: string | number;
-  subtitle: React.ReactNode;
-  icon: React.ReactNode;
-  pulse?: boolean;
-}) {
-  return (
-    <Card className="border-l-2 border-l-primary hover:shadow-glow">
-      <CardHeader className="flex flex-row items-start justify-between pb-2">
-        <CardDescription>{title}</CardDescription>
-        <div className="text-text-muted">{icon}</div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-2 text-3xl font-bold">
-          {value}
-          {pulse && <span className="h-2.5 w-2.5 rounded-full bg-danger animate-pulseSlow" />}
-        </div>
-        <div className="mt-1 text-xs text-text-muted">{subtitle}</div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function AgentCard({ agent }: { agent: Agent }) {
-  const navigate = useNavigate();
-  const relativeTime = useRelativeTime(agent.lastSeenAt);
-
-  return (
-    <Card className="hover:shadow-glow">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base">{agent.hostname}</CardTitle>
-          <StatusBadge status={agent.status} />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-2 text-sm text-text-muted">
-        <p>
-          IP: <span className="font-mono text-text-primary">{agent.ipAddress}</span>
-        </p>
-        <p>
-          Platform: <span className="text-text-primary">{agent.platform}/{agent.arch}</span>
-        </p>
-        <p>Last seen: {relativeTime}</p>
-        <Button variant="outline" className="mt-2 w-full" onClick={() => navigate(`/agents/${agent.id}`)}>
-          Launch Attack
-        </Button>
-      </CardContent>
-    </Card>
-  );
-}
-
 export default function DashboardPage() {
+  const navigate = useNavigate();
+
   const { data: agents = [] } = useQuery({
     queryKey: ["agents"],
     queryFn: getAgents,
@@ -110,116 +54,161 @@ export default function DashboardPage() {
     });
   }, [attacks]);
 
-  const recent = [...attacks].sort((a, b) => +new Date(b.scheduledAt) - +new Date(a.scheduledAt)).slice(0, 8);
+  const recent = [...attacks].sort((a, b) => +new Date(b.scheduledAt) - +new Date(a.scheduledAt)).slice(0, 10);
+  const fleet = [...agents].slice(0, 8);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/80 p-4">
-        <div className="flex items-center gap-2 text-lg font-semibold">
-          <span className="rounded-md bg-primary/20 p-1 text-primary"><Zap className="h-4 w-4" /></span>
-          <span className="rounded-md bg-border p-1 text-text-muted"><Shield className="h-4 w-4" /></span>
-          FaultForge
-          <span className="text-xs text-text-muted">/ dashboard</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-text-muted">
-          <a href="/dashboard" className="hover:text-text-primary">Dashboard</a>
-          <span>•</span>
-          <a href="/attacks" className="hover:text-text-primary">Attacks</a>
-          <span>•</span>
-          <a href="/settings" className="hover:text-text-primary">Settings</a>
-        </div>
-      </div>
+    <div className="space-y-5">
+      <section className="grid gap-4 xl:grid-cols-[1.3fr_1fr]">
+        <Card>
+          <CardHeader>
+            <CardDescription>Mission Overview</CardDescription>
+            <CardTitle className="text-2xl">Operational Command Board</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="max-w-2xl text-sm text-text-muted">
+              This console monitors live blast radius, fleet availability, and execution quality. Use it to control
+              failures with precision, not guesswork.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="rounded-md border border-border bg-bg/60 p-3">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Fleet Online</p>
+                <p className="mt-1 flex items-center gap-2 text-2xl font-semibold text-text-primary">
+                  <Server className="h-4 w-4 text-warning" /> {stats.online}/{agents.length}
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-bg/60 p-3">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Active Operations</p>
+                <p className="mt-1 flex items-center gap-2 text-2xl font-semibold text-text-primary">
+                  <Bomb className="h-4 w-4 text-warning" /> {stats.active}
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-bg/60 p-3">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Runs Today</p>
+                <p className="mt-1 flex items-center gap-2 text-2xl font-semibold text-text-primary">
+                  <Activity className="h-4 w-4 text-warning" /> {stats.today}
+                </p>
+              </div>
+              <div className="rounded-md border border-border bg-bg/60 p-3">
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Success Ratio</p>
+                <p className="mt-1 flex items-center gap-2 text-2xl font-semibold text-text-primary">
+                  <ShieldCheck className="h-4 w-4 text-warning" /> {stats.successRate}%
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          title="Total Agents"
-          value={agents.length}
-          subtitle={<span>{stats.online} online</span>}
-          icon={<Server className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Active Attacks"
-          value={stats.active}
-          subtitle="Pending + in progress"
-          icon={<Bomb className="h-4 w-4" />}
-          pulse={stats.active > 0}
-        />
-        <StatCard
-          title="Attacks Today"
-          value={stats.today}
-          subtitle="Since 00:00"
-          icon={<Activity className="h-4 w-4" />}
-        />
-        <StatCard
-          title="Success Rate"
-          value={`${stats.successRate}%`}
-          subtitle={<span className="inline-flex items-center gap-1 text-success"><ArrowUpRight className="h-3 w-3" /> stable trend</span>}
-          icon={<ShieldCheck className="h-4 w-4" />}
-        />
-      </div>
+        <Card>
+          <CardHeader>
+            <CardDescription>Telemetry</CardDescription>
+            <CardTitle>Attack Throughput</CardTitle>
+          </CardHeader>
+          <CardContent className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="attackFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#d3a957" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#d3a957" stopOpacity={0.03} />
+                  </linearGradient>
+                </defs>
+                <Tooltip
+                  contentStyle={{ background: "#111418", border: "1px solid #252a31", borderRadius: 8 }}
+                  labelStyle={{ color: "#e5e7eb" }}
+                />
+                <Area type="monotone" dataKey="attacks" stroke="#d3a957" fill="url(#attackFill)" strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </section>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Attack Throughput</CardTitle>
-          <CardDescription>Recent hourly attack volume</CardDescription>
-        </CardHeader>
-        <CardContent className="h-56">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="attackFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.6} />
-                  <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-              <Tooltip
-                contentStyle={{ background: "#111118", border: "1px solid #1e1e2e", borderRadius: 10 }}
-                labelStyle={{ color: "#f1f5f9" }}
-              />
-              <Area type="monotone" dataKey="attacks" stroke="#7c3aed" fill="url(#attackFill)" strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      <section id="agents" className="grid gap-4 xl:grid-cols-[1fr_1.5fr]">
+        <Card>
+          <CardHeader>
+            <CardDescription>Fleet Matrix</CardDescription>
+            <CardTitle>Agent Readiness</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {fleet.map((agent) => (
+              <div key={agent.id} className="flex items-center justify-between gap-3 rounded-md border border-border bg-bg/60 p-3">
+                <div>
+                  <p className="text-sm font-semibold text-text-primary">{agent.hostname}</p>
+                  <p className="text-xs text-text-muted">{agent.ipAddress}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={agent.status} />
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/agents/${agent.id}`)}>
+                    Engage
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
 
-      <section id="agents" className="space-y-3">
-        <h2 className="text-lg font-semibold">Agent Fleet</h2>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {agents.map((agent) => (
-            <AgentCard key={agent.id} agent={agent} />
-          ))}
-        </div>
+        <Card>
+          <CardHeader>
+            <CardDescription>Execution Feed</CardDescription>
+            <CardTitle>Recent Operations</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Agent</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Logged</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {recent.map((attack: Attack) => (
+                  <TableRow key={attack.id}>
+                    <TableCell><AttackTypeIconLabel type={attack.type} /></TableCell>
+                    <TableCell>{attack.agent?.hostname ?? attack.agentId.slice(0, 8)}</TableCell>
+                    <TableCell><StatusBadge status={attack.status} /></TableCell>
+                    <TableCell>{calculateDuration(attack.startedAt, attack.completedAt)}</TableCell>
+                    <TableCell className="text-text-muted">{formatDate(attack.scheduledAt)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       </section>
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Attacks</CardTitle>
+          <CardDescription>Signal Monitor</CardDescription>
+          <CardTitle>Fleet Last Seen</CardTitle>
         </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Attack Type</TableHead>
-                <TableHead>Target Agent</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Duration</TableHead>
-                <TableHead>Timestamp</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {recent.map((attack: Attack) => (
-                <TableRow key={attack.id}>
-                  <TableCell><AttackTypeIconLabel type={attack.type} /></TableCell>
-                  <TableCell>{attack.agent?.hostname ?? attack.agentId.slice(0, 8)}</TableCell>
-                  <TableCell><StatusBadge status={attack.status} /></TableCell>
-                  <TableCell>{calculateDuration(attack.startedAt, attack.completedAt)}</TableCell>
-                  <TableCell className="text-text-muted">{formatDate(attack.scheduledAt)}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {agents.slice(0, 8).map((agent) => (
+            <LastSeenTile key={agent.id} hostname={agent.hostname} lastSeenAt={agent.lastSeenAt} />
+          ))}
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+function LastSeenTile({ hostname, lastSeenAt }: { hostname: string; lastSeenAt: string }) {
+  const relativeTime = useRelativeTime(lastSeenAt);
+
+  return (
+    <div className="rounded-md border border-border bg-bg/60 p-3">
+      <p className="truncate text-sm font-semibold text-text-primary">{hostname}</p>
+      <p className="mt-1 inline-flex items-center gap-1 text-xs text-text-muted">
+        <Timer className="h-3.5 w-3.5" />
+        {relativeTime}
+      </p>
+      <p className="mt-2 inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.08em] text-warning">
+        <Cpu className="h-3.5 w-3.5" />
+        Telemetry Active
+      </p>
     </div>
   );
 }

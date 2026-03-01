@@ -1,4 +1,4 @@
-import type { Agent, Attack, CreateAttackRequest } from "./types";
+import type { Agent, Attack, CreateAttackRequest, CreateTargetRequest, Target } from "./types";
 
 const BASE_URL = "http://localhost:3000";
 
@@ -23,6 +23,22 @@ export async function getAgents() {
 export async function getAgentById(id: string) {
   const res = await fetch(`${BASE_URL}/api/agents/${id}`);
   return parseJson<Agent>(res);
+}
+
+export async function getTargets() {
+  const res = await fetch(`${BASE_URL}/api/targets`);
+  return parseJson<Target[]>(res);
+}
+
+export async function createTarget(input: CreateTargetRequest) {
+  const res = await fetch(`${BASE_URL}/api/targets`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  return parseJson<Target>(res);
 }
 
 export async function getAttacks(params?: { agentId?: string; status?: string }) {

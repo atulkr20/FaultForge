@@ -2,8 +2,8 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { AlertTriangle } from "lucide-react";
-import { createAttack, getAgentById, getAttacks } from "@/lib/api";
+import { AlertTriangle, Clock4, Network, Shield } from "lucide-react";
+import { createAttack, getAgentById, getAttacks, getTargets } from "@/lib/api";
 import type { Attack, AttackType, CreateAttackRequest } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,6 +23,7 @@ export default function AgentDetailPage() {
   const [iface, setIface] = useState("eth0");
   const [latency, setLatency] = useState(120);
   const [netDuration, setNetDuration] = useState(20);
+  const [targetId, setTargetId] = useState<string>("");
 
   const { data: agent } = useQuery({
     queryKey: ["agent", id],
@@ -36,6 +37,12 @@ export default function AgentDetailPage() {
     queryFn: () => getAttacks({ agentId: id }),
     enabled: Boolean(id),
     refetchInterval: 5000,
+  });
+
+  const { data: targets = [] } = useQuery({
+    queryKey: ["targets"],
+    queryFn: getTargets,
+    refetchInterval: 10000,
   });
 
   const sortedAttacks = useMemo(
@@ -67,7 +74,7 @@ export default function AgentDetailPage() {
       toast.error("Attack scheduling failed", { description: String(error) });
     },
     onSuccess: () => {
-      toast.success("Attack scheduled", { description: "The agent will pick this command on next heartbeat." });
+      toast.success("Attack scheduled", { description: "Agent will pick this command on next heartbeat." });
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["attacks", "agent", id] });
@@ -85,97 +92,124 @@ export default function AgentDetailPage() {
 
     mutation.mutate({
       agentId: agent.id,
+      targetId: targetId || undefined,
       type: attackType,
       payload,
     });
   };
 
   if (!agent) {
-    return <div className="text-text-muted">Loading agent details...</div>;
+    return <div className="text-text-muted">Loading agent dossier...</div>;
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-3">
-      <div className="space-y-6 xl:col-span-2">
+    <div className="grid gap-5 xl:grid-cols-[1.5fr_1fr]">
+      <div className="space-y-5">
         <Card>
           <CardHeader>
+            <CardDescription>Agent Dossier</CardDescription>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <CardTitle className="text-xl">{agent.hostname}</CardTitle>
-                <CardDescription className="font-mono">{agent.id}</CardDescription>
-              </div>
+              <CardTitle className="text-2xl">{agent.hostname}</CardTitle>
               <StatusBadge status={agent.status} />
             </div>
           </CardHeader>
-          <CardContent className="grid gap-3 text-sm text-text-muted md:grid-cols-2">
-            <div>IP: <span className="font-mono text-text-primary">{agent.ipAddress}</span></div>
-            <div>Platform: <span className="text-text-primary">{agent.platform}/{agent.arch}</span></div>
-            <div>Version: <span className="text-text-primary">{agent.version}</span></div>
-            <div>Registered: <span className="text-text-primary">{formatDate(agent.registeredAt)}</span></div>
+          <CardContent className="grid gap-3 text-sm md:grid-cols-2">
+            <div className="rounded-md border border-border bg-bg/60 p-3">
+              <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Identity</p>
+              <p className="mt-1 font-mono text-xs text-text-primary">{agent.id}</p>
+            </div>
+            <div className="rounded-md border border-border bg-bg/60 p-3">
+              <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Network</p>
+              <p className="mt-1 text-text-primary">{agent.ipAddress}</p>
+            </div>
+            <div className="rounded-md border border-border bg-bg/60 p-3">
+              <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Platform</p>
+              <p className="mt-1 text-text-primary">{agent.platform}/{agent.arch}</p>
+            </div>
+            <div className="rounded-md border border-border bg-bg/60 p-3">
+              <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Registered</p>
+              <p className="mt-1 text-text-primary">{formatDate(agent.registeredAt)}</p>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Attack History Timeline</CardTitle>
+            <CardDescription>Execution Timeline</CardDescription>
+            <CardTitle>Attack History</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="relative ml-2 space-y-5 border-l border-border pl-6">
-              {sortedAttacks.map((attack) => (
-                <div key={attack.id} className="relative">
-                  <span className="absolute -left-[29px] top-1 h-3 w-3 rounded-full bg-primary" />
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <AttackTypeIconLabel type={attack.type} />
-                      <StatusBadge status={attack.status} />
-                    </div>
-                    <p className="text-xs text-text-muted">{formatDate(attack.scheduledAt)}</p>
-                    {attack.errorMessage && <p className="text-xs text-danger">{attack.errorMessage}</p>}
+          <CardContent className="space-y-2">
+            {sortedAttacks.map((attack) => (
+              <div key={attack.id} className="rounded-md border border-border bg-bg/60 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <AttackTypeIconLabel type={attack.type} />
+                    <StatusBadge status={attack.status} />
                   </div>
+                  <p className="inline-flex items-center gap-1 text-xs text-text-muted">
+                    <Clock4 className="h-3.5 w-3.5" />
+                    {formatDate(attack.scheduledAt)}
+                  </p>
                 </div>
-              ))}
-            </div>
+                {attack.errorMessage && <p className="mt-2 text-xs text-danger">{attack.errorMessage}</p>}
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>
 
-      <Card className="h-fit xl:sticky xl:top-4">
+      <Card className="h-fit xl:sticky xl:top-20">
         <CardHeader>
+          <CardDescription>Operation Console</CardDescription>
           <CardTitle>Launch Attack</CardTitle>
-          <CardDescription>Use with caution in live environments.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm text-text-muted">Attack Type</label>
+            <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Attack Type</p>
             <Select value={attackType} onChange={(e) => setAttackType(e.target.value as AttackType)}>
               <option value="CPU_STRESS">CPU_STRESS</option>
               <option value="NETWORK_LATENCY">NETWORK_LATENCY</option>
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Linked Target</p>
+            <Select value={targetId} onChange={(e) => setTargetId(e.target.value)}>
+              <option value="">No target</option>
+              {targets.map((target) => (
+                <option key={target.id} value={target.id}>
+                  {target.name} ({target.baseUrl})
+                </option>
+              ))}
+            </Select>
+          </div>
+
           {attackType === "CPU_STRESS" ? (
             <>
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">CPU Percentage: {percentage}%</label>
-                <input type="range" min={0} max={100} value={percentage} onChange={(e) => setPercentage(Number(e.target.value))} className="w-full accent-danger" />
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">CPU Load {percentage}%</p>
+                <input type="range" min={0} max={100} value={percentage} onChange={(e) => setPercentage(Number(e.target.value))} className="w-full accent-warning" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Duration (seconds)</label>
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Duration (seconds)</p>
                 <Input type="number" value={cpuDuration} min={1} onChange={(e) => setCpuDuration(Number(e.target.value))} />
               </div>
             </>
           ) : (
             <>
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Interface</label>
+                <p className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.08em] text-text-muted">
+                  <Network className="h-3.5 w-3.5" />
+                  Interface
+                </p>
                 <Input value={iface} onChange={(e) => setIface(e.target.value)} placeholder="eth0" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Latency: {latency} ms</label>
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Latency {latency} ms</p>
                 <input type="range" min={0} max={500} value={latency} onChange={(e) => setLatency(Number(e.target.value))} className="w-full accent-warning" />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-text-muted">Duration (seconds)</label>
+                <p className="text-[11px] uppercase tracking-[0.08em] text-text-muted">Duration (seconds)</p>
                 <Input type="number" value={netDuration} min={1} onChange={(e) => setNetDuration(Number(e.target.value))} />
               </div>
             </>
@@ -183,8 +217,13 @@ export default function AgentDetailPage() {
 
           <Button variant="danger" className="w-full" onClick={submitAttack} disabled={mutation.isPending}>
             <AlertTriangle className="h-4 w-4" />
-            EXECUTE ATTACK
+            Execute Attack
           </Button>
+
+          <div className="inline-flex items-center gap-2 rounded-md border border-border bg-bg/60 px-3 py-2 text-xs text-text-muted">
+            <Shield className="h-3.5 w-3.5 text-warning" />
+            Commands are dispatched on next heartbeat.
+          </div>
         </CardContent>
       </Card>
     </div>

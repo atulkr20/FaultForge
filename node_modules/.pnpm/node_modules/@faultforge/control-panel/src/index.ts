@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { agentRoutes } from "./routes/agent.routes";
 import { attackRoutes } from "./routes/attack.routes";
+import { targetRoutes } from "./routes/target.routes";
 
 dotenv.config();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 //Routes
 app.use("/api/agents", agentRoutes);
 app.use("/api/attacks", attackRoutes);
+app.use("/api/targets", targetRoutes);
 
 // Health check to monintor the server is alive
 app.get("/health", (_, res) => {
