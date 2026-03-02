@@ -20,11 +20,27 @@ declare const _default: {
                 sans: [string, string, string];
                 mono: [string, string];
             };
+            fontSize: {
+                micro: string;
+            };
             boxShadow: {
                 glow: string;
+                glowLarge: string;
+                primary: string;
             };
             animation: {
-                pulseSlow: string;
+                pulse: string;
+                flicker: string;
+            };
+            keyframes: {
+                flicker: {
+                    "0%, 100%": {
+                        opacity: string;
+                    };
+                    "50%": {
+                        opacity: string;
+                    };
+                };
             };
         };
     };

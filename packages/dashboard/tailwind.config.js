@@ -4,27 +4,39 @@ export default {
     theme: {
         extend: {
             colors: {
-                bg: "#0a0a0f",
-                card: "#111118",
-                border: "#1e1e2e",
-                primary: "#7c3aed",
-                danger: "#ef4444",
-                success: "#22c55e",
-                warning: "#f59e0b",
+                bg: "#060608",
+                card: "#0d0d0f",
+                border: "rgba(255, 255, 255, 0.05)",
+                primary: "#ff3c3c",
+                danger: "#ff3c3c",
+                success: "#4cff91",
+                warning: "#f5c842",
                 text: {
-                    primary: "#f1f5f9",
-                    muted: "#64748b",
+                    primary: "#f5f5f5",
+                    muted: "#888888",
                 },
             },
             fontFamily: {
                 sans: ["Inter", "system-ui", "sans-serif"],
                 mono: ["'JetBrains Mono'", "monospace"],
             },
+            fontSize: {
+                micro: "0.625rem",
+            },
             boxShadow: {
-                glow: "0 0 0 1px rgba(124, 58, 237, 0.35), 0 0 28px rgba(124, 58, 237, 0.16)",
+                glow: "0 0 30px rgba(255, 60, 60, 0.3)",
+                glowLarge: "0 0 40px rgba(255, 60, 60, 0.5)",
+                primary: "0 0 20px rgba(255, 60, 60, 0.35)",
             },
             animation: {
-                pulseSlow: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                flicker: "flicker 1.5s infinite",
+            },
+            keyframes: {
+                flicker: {
+                    "0%, 100%": { opacity: "1" },
+                    "50%": { opacity: "0.7" },
+                },
             },
         },
     },

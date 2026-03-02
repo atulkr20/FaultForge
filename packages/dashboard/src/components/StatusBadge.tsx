@@ -21,7 +21,7 @@ const toneMap: Record<Status, { dot: string; text: string; pulse?: boolean }> = 
 export default function StatusBadge({ status }: Props) {
   const tone = toneMap[status];
   return (
-    <div className={cn("inline-flex items-center gap-2 rounded-md border border-border bg-bg/70 px-2.5 py-1 text-[11px] font-semibold tracking-[0.06em]", tone.text)}>
+    <div className={cn("inline-flex items-center gap-2 rounded-md border border-white/5 bg-bg/70 px-2.5 py-1 text-[11px] font-semibold tracking-[0.06em]", tone.text)}>
       <span className={cn("h-2 w-2 rounded-full", tone.dot, tone.pulse && "animate-pulseSlow")} />
       {status}
     </div>
